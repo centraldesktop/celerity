@@ -7,7 +7,21 @@ module Celerity
 
     def click
       assert_exists_and_enabled
+
+      # There is an issue when javascript exceptions is turned 
+      # on and Celerity tries to click on a object inside of 
+      # an iframe. htmlUnit raises a ScriptException when invoking
+      # jsxFunction_close, then celerity raises a NativeException.
+      #
+      # The clicking action never takes place, so our automated tests
+      # cannot continue. 
+      #
+      # Remember the javascript exception setting, turn it off, 
+      # click the object, and restore the setting.
+      setting = @browser.javascript_exceptions
+      @browser.javascript_exceptions = false
       rescue_status_code_exception { @object.click }
+      @browser.javascript_exceptions = setting
     end
 
     #
