@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 require File.expand_path("../watirspec/spec_helper", __FILE__)
 
 describe "Browser" do
@@ -269,15 +271,15 @@ describe "Browser" do
       browser.wait.should be_true
       alerts.should == 1
     end
-    
+
     it "should pass the correct args to webclient" do
       browser.webclient.should_receive(:waitForBackgroundJavaScript).with(10000)
       browser.wait
-      
+
       browser.webclient.should_receive(:waitForBackgroundJavaScript).with(3000)
-      browser.wait(3)      
+      browser.wait(3)
     end
-    
+
   end
 
   describe "#wait_while" do
@@ -285,7 +287,9 @@ describe "Browser" do
       browser.goto(WatirSpec.files + "/timeout.html")
       browser.div(:id, "change").click
       browser.wait_while { browser.contains_text("Trigger change") }
-      browser.div(:id, "change").text.should == "all done"
+      browser.wait_until {
+        browser.div(:id, "change").text == "all done"
+      }
     end
 
     it "returns the value returned from the block" do
@@ -349,9 +353,14 @@ describe "Browser" do
   describe "#status_code_exceptions" do
     it "raises status code exceptions if set to true" do
       browser.status_code_exceptions = true
-      lambda do
-        browser.goto(WatirSpec.host + "/doesnt_exist")
-      end.should raise_error(NavigationException)
+
+      begin
+        lambda {
+          browser.goto(WatirSpec.host + "/doesnt_exist")
+        }.should raise_error(NavigationException)
+      ensure
+        browser.status_code_exceptions = false
+      end
     end
   end
 
@@ -359,9 +368,11 @@ describe "Browser" do
     it "raises javascript exceptions if set to true" do
       browser.goto(WatirSpec.files + "/forms_with_input_elements.html")
       browser.javascript_exceptions = true
-      lambda do
-        browser.execute_script("no_such_function()")
-      end.should raise_error
+      begin
+        lambda { browser.execute_script("no_such_function()") }.should raise_error
+      ensure
+        browser.javascript_exceptions = false
+      end
     end
   end
 
